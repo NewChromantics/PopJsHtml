@@ -28,6 +28,20 @@ Pop.HtmlDom = function()
 		return Element;
 	}
 	
+	this.GetElement = function(Name)
+	{
+		let CompareElement = function(Element)
+		{
+			return Element.Name == Name;
+		}
+		let MatchElements = this.Elements.filter( CompareElement );
+		if ( MatchElements.length > 1 )
+			throw "Multiple elements matching the name " + Name;
+		if ( MatchElements.length == 0 )
+			throw "No elements name " + Name;
+		return MatchElements[0];
+	}
+	
 	//	OnMouseDown
 	//	OnMouseMove
 	//	OnScroll
