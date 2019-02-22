@@ -1,21 +1,64 @@
-
-
-Pop.HtmlRenderer = function()
+var THtmlDomCache = function(RootElementId)
 {
+	this.RootElement = document.getElementById(RootElementId);
+	console.log(this.RootElement);
+	
+	this.GetElement = function(Name)
+	{
+		let Children = this.RootElement.childNodes;
+		let MatchElement = null;
+		let FindMatch = function(Child)
+		{
+			if ( Child.id == Name )
+				MatchElement = Child;
+		}
+		
+		Children.forEach( FindMatch );
+		
+		if ( MatchElement )
+			return MatchElement;
+		
+		//	create new
+		Pop.Debug("Creating new element: " + Name );
+		MatchElement = document.createElement('div');
+		MatchElement.id = Name;
+		this.RootElement.appendChild( MatchElement );
+		return MatchElement;
+	}
+}
+
+
+
+Pop.HtmlRenderer = function(RootElementId)
+{
+	this.HtmlDomCache = new THtmlDomCache(RootElementId);
+
+	
 	this.ApplyUniform = function(Element,Uniform,Value)
 	{
 		//	todo: convert numbers to px
 		Element.style[Uniform] = Value;
 	}
 	
-	this.ApplyRenderCommand = function(Command,Element)
+	
+	this.ApplyRenderCommand = function(Command,Element,CommandIndex)
 	{
+		//	force sorting order
+		Command.Uniforms['zIndex'] = Number(CommandIndex);
+		Command.Uniforms['position'] = 'absolute';
+		Command.Uniforms['display'] = 'block';
+		Command.Uniforms['overflow'] = 'hidden';
+
 		//	Rect = new position
 		//	uniforms = style
-		Command.Uniforms['left'] = Command.Rect[0];
-		Command.Uniforms['top'] = Command.Rect[1];
-		Command.Uniforms['right'] = Command.Rect[0] + Command.Rect[2];
-		Command.Uniforms['bottom'] = Command.Rect[1] + Command.Rect[3];
+		Command.Uniforms['left'] = Command.Rect.x + "px";
+		Command.Uniforms['top'] = Command.Rect.y + "px";
+		Command.Uniforms['width'] = Command.Rect.w + "px";
+		Command.Uniforms['height'] = Command.Rect.h + "px";
+		
+		//	set new class style
+		if ( Command.Shader )
+			Element.className = Command.Shader;
 		
 		//	apply all uniforms
 		let ApplyUniform = function(Key)
@@ -29,11 +72,30 @@ Pop.HtmlRenderer = function()
 	
 	this.Render = function(RenderCommands)
 	{
-		let RenderTheCommand = function(RenderCommand)
+		let RenderTheCommand = function(RenderCommand,RenderCommandIndex)
 		{
-			let Element = undefined;
-			this.ApplyRenderCommand( RenderCommand, Element );
+			//console.log("New render command:" + JSON.stringify(RenderCommand) );
+			let Element = this.HtmlDomCache.GetElement( RenderCommand.ElementName );
+			this.ApplyRenderCommand( RenderCommand, Element, RenderCommandIndex );
 		}
 		RenderCommands.forEach( RenderTheCommand.bind(this) );
 	}
+	
+	this.Loop = function()
+	{
+		try
+		{
+			if ( this.OnUpdate )
+				this.OnUpdate();
+		}
+		catch(e)
+		{
+			console.log("HtmlRenderer OnUpdate error: " + e);
+		}
+		
+		requestAnimationFrame( this.Loop.bind(this) );
+	}
+	
+	//	start loop
+	this.Loop();
 }
