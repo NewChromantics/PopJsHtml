@@ -38,6 +38,12 @@ Pop.HtmlRenderer = function(RootElementId)
 	{
 		//	todo: convert numbers to px
 		Element.style[Uniform] = Value;
+		
+		//	this lets CSS access values with attr()
+		if ( Uniform == "content" )
+		{
+			Element.setAttribute( Uniform, Value );
+		}
 	}
 	
 	
@@ -83,6 +89,8 @@ Pop.HtmlRenderer = function(RootElementId)
 	
 	this.Loop = function()
 	{
+		if ( this.OnUpdate )
+			this.OnUpdate();
 		try
 		{
 			if ( this.OnUpdate )
@@ -91,6 +99,7 @@ Pop.HtmlRenderer = function(RootElementId)
 		catch(e)
 		{
 			console.log("HtmlRenderer OnUpdate error: " + e);
+			throw e;
 		}
 		
 		requestAnimationFrame( this.Loop.bind(this) );
